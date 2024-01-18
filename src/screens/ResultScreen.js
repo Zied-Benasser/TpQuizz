@@ -3,20 +3,57 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { storeData, getData } from '../utils/asyncStorage';  // Fonctions utilitaires pour AsyncStorage
 
-const ResultScreen = async ({ route, navigation }) => {
+const ResultScreen = ({ route, navigation }) => {
   // Récupération des données du quiz et du score à partir des paramètres de navigation
   const { score, totalQuestions, quizData } = route.params;
-  
+
   // Calcul du pourcentage de réussite
   const percentage = ((score || 0) / (totalQuestions || 1)) * 100;
-  
-      // Sauvegarde du tableau mis à jour
-      await storeData('allScores', [...existingScores, newScore]);
-  
-    saveScore();
 
   // Logique pour déterminer les commentaires et les images en fonction du score
   // (le reste du code est similaire)
+  let comment = ""; // Define the 'comment' variable
+  let imageSource = ""; // Define the 'imageSource' variable
+
+  if (percentage === 100) {
+    comment = quizData.feedback.perfect.comment;
+    imageSource = quizData.feedback.perfect.image;
+  } else if (percentage >= 90) {
+    comment = quizData.feedback.excellent.comment;
+    imageSource = quizData.feedback.excellent.image;
+  } else if (percentage >= 80) {
+    comment = quizData.feedback.veryGood.comment;
+    imageSource = quizData.feedback.veryGood.image;
+  } else if (percentage >= 60) {
+    comment = quizData.feedback.good.comment;
+    imageSource = quizData.feedback.good.image;
+  } else if (percentage >= 40) {
+    comment = quizData.feedback.average.comment;
+    imageSource = quizData.feedback.average.image;
+  } else {
+    comment = quizData.feedback.poor.comment;
+    imageSource = quizData.feedback.poor.image;
+  }
+
+
+  useEffect(() => {
+    const saveScore = async () => {
+      // Récupération des scores existants
+      const existingScores = await getData('allScores') || [];
+
+      // Ajout du nouveau score
+      const newScore = {
+        id: new Date().toISOString(),
+        quiz: quizData.quizTitle,
+        score,
+      };
+
+      // Sauvegarde du tableau mis à jour
+      await storeData('allScores', [...existingScores, newScore]);
+    };
+
+    saveScore();
+  }, []);
 
   return (
     // Conteneur principal pour l'écran des résultats
@@ -24,10 +61,10 @@ const ResultScreen = async ({ route, navigation }) => {
       {/* Affichage du score et des commentaires */}
       <Text style={styles.scoreText}>Votre score : {percentage}%</Text>
       <Text style={styles.commentText}>{comment}</Text>
-      
+
       {/* Affichage de l'image */}
       <Image source={{ uri: imageSource }} style={styles.image} />
-      
+
       {/* Boutons pour naviguer vers d'autres écrans */}
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
         <Text style={styles.buttonText}>Retour à l'accueil</Text>
